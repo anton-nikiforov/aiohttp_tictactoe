@@ -27,11 +27,28 @@ games_moves = sa.Table('games_moves', metadata,
                 sa.Column('y', sa.Integer))
 
 async def init_db(loop=None, host=None, db=None, user=None, password=None):
-	engine = await create_engine(
+    engine = await create_engine(
         host=host,
         db=db,
         user=user,
         password=password,
         loop=loop
         ) 
-	return engine
+    return engine
+
+class BaseModel():
+
+    def __init__(self, db):
+        self.db = db
+
+    async def insert(self, sql):
+        async with self.db.acquire() as conn:
+            tr = await conn.begin()
+            try:
+                result = await conn.execute(sql)
+            except Exception as e:
+                print(str(e))
+                await tr.rollback()
+            else:
+                await tr.commit()
+                return result

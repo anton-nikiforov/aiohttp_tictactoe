@@ -6,6 +6,7 @@ from auth.models import User
 from game.forms import GameCreateForm
 from game.models import Games, Message
 from settings import log
+from utils import redirect
 
 @aiohttp_jinja2.template('game/create.html')
 async def games_create(request):
@@ -15,9 +16,11 @@ async def games_create(request):
         form.process(await request.post())
         if form.validate():
             games = Games(request.db)
-            result = await games.create(form.size.data)
-            if result.lastrowid:
+            result = await games.create(form.data)
+            if result and result.lastrowid:
                 await games.add_user(int(session['user']), result.lastrowid)
+                raise web.HTTPFound(request.app.router['detail'] \
+                                    .url(parts={'id': result.lastrowid}))
     return {'title': 'List of games', 'form': form}
 
 @aiohttp_jinja2.template('game/index.html')
@@ -26,7 +29,7 @@ async def games_list(request):
 
 @aiohttp_jinja2.template('game/detail.html')
 async def games_detail(request):
-    pass
+    return {'title': 'Game room #{}'.format(request.match_info['id'])}
 
 class WebSocket(web.View):
     

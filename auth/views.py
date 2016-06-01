@@ -25,8 +25,9 @@ async def login(request):
         form.process(await request.post())
         if form.validate():
             user = User(request.db)
-            result = await user.authenticate(email=form.email.data, password=form.password.data)       
-            if result.rowcount:
+            result = await user.authenticate(email=form.email.data, 
+                                            password=form.password.data)
+            if result and result.rowcount:
                 row = await result.fetchone()
                 session = await get_session(request)
                 set_session(session, row['id'], request)
@@ -47,8 +48,8 @@ async def signin(request):
             check = await user.check_email(form.email.data)
             if check.rowcount:
                 redirect(request, 'login')
-            result = await user.save(form.data)
-            if result.lastrowid:
+            result = await user.create(form.data)
+            if result and result.lastrowid:
                 session = await get_session(request)
                 set_session(session, result.lastrowid, request)
                 redirect(request, 'login')
