@@ -2,5 +2,28 @@
 
 {% block content %}
 	<p><a href="{{ app.router['create'].url() }}" class="btn btn-success">Create game</a></p>
-list
+	<table class="table table-condensed">
+		<thead>
+			<tr>
+				<th>Id</th>
+				<th>Config size</th>
+				<th>Created</th>
+				<th>Users</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for one in data %}
+				<tr>
+					<td>#{{ one.id }}</td>
+					<td>{{ one.config_size }}</td>
+					<td>{{ one.created }}</td>
+					<td>{{ one.users_login }}</td>
+					<td><a href="{{ one.url }}">
+					{% if one.users_count < 2 %}Join{% else %}View{% endif %}
+					</a></td>
+				</tr>
+			{% endfor %}			
+		</tbody>
+	</table>
 {% endblock %}

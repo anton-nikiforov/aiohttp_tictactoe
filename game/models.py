@@ -1,9 +1,13 @@
 from datetime import datetime
 
+from sqlalchemy import select
+
 from database import (
 	BaseModel, 
 	games, 
-	games_users
+	games_moves,
+	games_users,
+	users
 	)
 
 class Games(BaseModel):
@@ -16,6 +20,32 @@ class Games(BaseModel):
 	async def add_user(self, users_id=None, games_id=None):
 		return await self.insert(games_users.insert().values(
 								users_id=users_id, games_id=games_id))
+
+	async def all(self):
+		async with self.db.acquire() as conn:
+			return await conn.execute('''
+				select g.*, (select count(gu.id) from games_users gu 
+							where gu.games_id = g.id) as users_count,
+					(select group_concat(u.login separator ', ') from users u
+						left join games_users gu on u.id = gu.users_id 
+						left join games gg on gg.id = gu.games_id 
+						where gg.id = g.id
+					) as users_login
+				from games g order by g.created desc''')
+
+	async def one(self, game_id=None):
+		async with self.db.acquire() as conn:
+			return await conn.execute(games.select(games.c.id == game_id))
+
+	async def get_users(self, game_id=None):
+		stm = select([games_users.c.users_id]).where(games_users.c.games_id == game_id)
+		async with self.db.acquire() as conn:
+			return await conn.execute(users.select().where(users.c.id == stm))
+
+	async def get_moves(self, game_id=None):
+		async with self.db.acquire() as conn:
+			return await conn.execute(games_moves.select(
+										games_moves.c.games_id == game_id))
 
 class Message():
 

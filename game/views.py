@@ -19,17 +19,39 @@ async def games_create(request):
             result = await games.create(form.data)
             if result and result.lastrowid:
                 await games.add_user(int(session['user']), result.lastrowid)
-                raise web.HTTPFound(request.app.router['detail'] \
+                raise web.HTTPFound(request.app.router['game_detail'] \
                                     .url(parts={'id': result.lastrowid}))
     return {'title': 'List of games', 'form': form}
 
 @aiohttp_jinja2.template('game/index.html')
 async def games_list(request):
-    return {'title': 'List of games'}
+    games = Games(request.db)
+    result = await games.all()
+    data = []
+
+    for one in result:
+        data_one = dict(one)
+        data_one['url'] = request.app.router['game_detail'].url(parts={'id': one.id})
+        data.append(data_one)
+
+    return {'title': 'List of games', 'data': data}
 
 @aiohttp_jinja2.template('game/detail.html')
 async def games_detail(request):
-    return {'title': 'Game room #{}'.format(request.match_info['id'])}
+    game_id = request.match_info['id']
+
+    games = Games(request.db)
+    game_info = await games.one(game_id)
+    game_users = await games.get_users(game_id)
+    game_moves = await games.get_moves(game_id)
+
+    return {
+        'game_id': game_id,
+        'game_info': game_info,
+        'game_users': game_users,
+        'game_moves': game_moves,
+        'title': 'Game room #{}'.format(game_id)
+    }
 
 class WebSocket(web.View):
     

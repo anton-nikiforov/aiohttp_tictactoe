@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
 {% block content %}
-	detail
+	<ul>
+		{% for user in game_users %}
+			<li>{{ user.login }}</li>
+		{% endfor %}
+	</ul>
 {% endblock %}
