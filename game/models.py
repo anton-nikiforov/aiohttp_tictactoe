@@ -47,6 +47,18 @@ class Games(BaseModel):
 			return await conn.execute(games_moves.select(
 										games_moves.c.games_id == game_id))
 
+	async def count_users_in_game(self, game_id=None):
+		async with self.db.acquire() as conn:
+			result = await conn.execute(games_users.count().where(games_users.c.games_id == game_id))
+			return await result.scalar()		
+
+	async def is_user_in_game(self, users_id=None, games_id=None):
+		async with self.db.acquire() as conn:
+			result = await conn.execute(games_users.count() \
+							.where(games_users.c.games_id == games_id) \
+							.where(games_users.c.users_id == users_id))
+			return await result.scalar()
+
 class Message():
 
 	def __init__(self, db):

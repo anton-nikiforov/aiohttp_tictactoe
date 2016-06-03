@@ -19,9 +19,7 @@
 					<td>{{ one.config_size }}</td>
 					<td>{{ one.created }}</td>
 					<td>{{ one.users_login }}</td>
-					<td><a href="{{ one.url }}">
-					{% if one.users_count < 2 %}Join{% else %}View{% endif %}
-					</a></td>
+					<td><a href="{{ one.url }}">{{ one.url_label }}</a></td>
 				</tr>
 			{% endfor %}			
 		</tbody>
