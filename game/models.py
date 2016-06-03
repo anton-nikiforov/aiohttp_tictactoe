@@ -30,7 +30,12 @@ class Games(BaseModel):
 						left join games_users gu on u.id = gu.users_id 
 						left join games gg on gg.id = gu.games_id 
 						where gg.id = g.id
-					) as users_login
+					) as users_login,
+					(select group_concat(u.id separator ',') from users u
+						left join games_users gu on u.id = gu.users_id 
+						left join games gg on gg.id = gu.games_id 
+						where gg.id = g.id
+					) as users_ids
 				from games g order by g.created desc''')
 
 	async def one(self, game_id=None):

@@ -57,8 +57,13 @@ async def games_list(request):
 
     for one in result:
         data_one = dict(one)
-        data_one['detail_url'] = request.app.router['game_detail'].url(parts={'id': one.id})
-        data_one['join_url'] = request.app.router['game_join'].url(parts={'id': one.id})
+        if one.users_count < PLAYERS_IN_GAME and \
+                user_id not in list(map(int, one.users_ids.split(','))):
+            data_one['url'] = request.app.router['game_join'].url(parts={'id': one.id})
+            data_one['url_label'] = 'Join'
+        else:
+            data_one['url'] = request.app.router['game_detail'].url(parts={'id': one.id})
+            data_one['url_label'] = 'View'           
         data.append(data_one)
 
     return {'title': 'List of games', 'data': data}
