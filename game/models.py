@@ -23,7 +23,7 @@ class Games(BaseModel):
 
 	async def all(self):
 		async with self.db.acquire() as conn:
-			return await conn.execute('''
+			result = await conn.execute('''
 				select g.*, (select count(gu.id) from games_users gu 
 							where gu.games_id = g.id) as users_count,
 					(select group_concat(u.login separator ', ') from users u
@@ -36,21 +36,25 @@ class Games(BaseModel):
 						left join games gg on gg.id = gu.games_id 
 						where gg.id = g.id
 					) as users_ids
-				from games g order by g.created desc''')
+				from games g order by g.created desc;''')
+			return await result.fetchall()
 
 	async def one(self, game_id=None):
 		async with self.db.acquire() as conn:
-			return await conn.execute(games.select(games.c.id == game_id))
+			result = await conn.execute(games.select(games.c.id == game_id))
+			return await result.fetchall()
 
 	async def get_users(self, game_id=None):
 		stm = select([games_users.c.users_id]).where(games_users.c.games_id == game_id)
 		async with self.db.acquire() as conn:
-			return await conn.execute(users.select().where(users.c.id == stm))
+			result = await conn.execute(users.select().where(users.c.id.in_(stm)))
+			return await result.fetchall()
 
 	async def get_moves(self, game_id=None):
 		async with self.db.acquire() as conn:
-			return await conn.execute(games_moves.select(
+			result = await conn.execute(games_moves.select(
 										games_moves.c.games_id == game_id))
+			return await result.fetchall()
 
 	async def count_users_in_game(self, game_id=None):
 		async with self.db.acquire() as conn:
