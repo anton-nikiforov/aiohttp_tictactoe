@@ -6,4 +6,9 @@
 			<li>{{ user.login }}</li>
 		{% endfor %}
 	</ul>
+	<div id="log"></div>
+{% endblock %}
+
+{% block footer %}
+    <script src="{{ app.router.static.url(filename='app.js') }}"></script>
 {% endblock %}

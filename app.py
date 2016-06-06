@@ -36,7 +36,7 @@ async def init(loop):
     app['websockets'] = []
     handler = app.make_handler()
     if DEBUG:
-        aiohttp_debugtoolbar.setup(app)
+        aiohttp_debugtoolbar.setup(app, intercept_redirects=False)
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader('templates'))
 
     # route part

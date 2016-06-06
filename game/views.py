@@ -93,8 +93,7 @@ class WebSocket(web.View):
         await ws.prepare(self.request)
 
         session = await get_session(self.request)
-        user = User(self.request.db, {'id': session.get('user')})
-        login = await user.get_login()
+        login = session.get('user')
 
         for _ws in self.request.app['websockets']:
             _ws.send_str('%s joined' % login)
@@ -105,9 +104,6 @@ class WebSocket(web.View):
                 if msg.data == 'close':
                     await ws.close()
                 else:
-                    message = Message(self.request.db)
-                    result = await message.save(user=login, msg=msg.data)
-                    log.debug(result)
                     for _ws in self.request.app['websockets']:
                         _ws.send_str('(%s) %s' % (login, msg.data))
             elif msg.tp == MsgType.error:
