@@ -17,6 +17,7 @@
                 <div class="navbar-collapse">
                     <span class="navbar-brand">Tic tac toe</span>
                     {% if app.is_authorized %}
+                        <span class="navbar-text">Hello, {{ app.user.login }}!</span>
                         <span class="navbar-right">
                             <a class="btn btn-default navbar-btn" href="{{ app.router['signout'].url() }}">Sign Out</a>
                         </span>

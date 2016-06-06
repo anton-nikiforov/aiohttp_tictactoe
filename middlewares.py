@@ -1,5 +1,7 @@
 from aiohttp import web
 from aiohttp_session import get_session
+
+from auth.models import User
 from settings import *
 
 
@@ -24,6 +26,8 @@ async def authorize(app, handler):
         session = await get_session(request)
         if session.get("user"):
             app.is_authorized=True
+            user_instance = User(app.db)
+            app.user = await user_instance.one(int(session.get("user")))
             return await handler(request)
         elif check_path(request.path):
             app.is_authorized=False

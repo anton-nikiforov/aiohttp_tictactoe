@@ -25,3 +25,9 @@ MYSQL_USER = env.str('MYSQL_USER')
 MYSQL_PASSWORD = env.str('MYSQL_PASSWORD')
 
 PLAYERS_IN_GAME = 2
+
+STATUS = {
+	'OK': 1,
+	'ERROR': 2,
+	'INFO': 3
+}

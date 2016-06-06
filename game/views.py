@@ -7,7 +7,7 @@ from aiohttp import web, MsgType
 from auth.models import User
 from game.forms import GameCreateForm
 from game.models import Games
-from settings import log, PLAYERS_IN_GAME
+from settings import log, PLAYERS_IN_GAME, STATUS
 from utils import redirect, check_for_winner
 
 @aiohttp_jinja2.template('game/create.html')
@@ -90,7 +90,9 @@ async def games_detail(request):
 
     current_user_in_game = any(user.id == user_id for user in game_users)
 
-    print(data_moves)
+    STATUS_JS = {}
+    for key, value in STATUS.items():
+        STATUS_JS[value] = key
 
     return {
         'game_id': game_id,
@@ -101,7 +103,8 @@ async def games_detail(request):
         'title': 'Game room #{}'.format(game_id),
         'url': request.app.router['game_ws'].url(parts={'id': game_id}),
         'user_id': user_id,
-        'current_user_in_game': int(current_user_in_game)
+        'current_user_in_game': int(current_user_in_game),
+        'response_status': json.dumps(STATUS_JS)
     }
 
 async def game_detail_ws(request):
@@ -110,14 +113,11 @@ async def game_detail_ws(request):
     user_id = int(session.get('user'))
     game_id = request.match_info['id']
 
-    print('User id: {}'.format(user_id))
-    print('Game id: {}'.format(game_id))
-
     ws = web.WebSocketResponse()
     await ws.prepare(request)
 
     for _ws in request.app['websockets']:
-        _ws.send_str('%s joined' % user_id)
+        _ws.send_str(json.dumps({'message': '{} joined'.format(user_id), 'status': STATUS['INFO']}))
     request.app['websockets'].append(ws)
 
     async for msg in ws:
@@ -176,28 +176,30 @@ async def game_detail_ws(request):
                         await games.finish_game(game_id, winner_id)
 
                     context = {
-                        'status': True,
+                        'status': STATUS['OK'],
                         'winner': winner_id,
                         'next_user_id': next(user.id for user in game_users if user.id != user_id),
+                        'current_user_id': user_id,
                         'i': data['i'],
-                        'j': data['j']
+                        'j': data['j'],
+                        'message': '{} made choice'.format(user_id)
                     }
 
                 except Exception as e:
                     print(str(e))
                     context = {
-                        'status': False,
+                        'status': STATUS['ERROR'],
                         'message': str(e)
                     }
 
                 for _ws in request.app['websockets']:
                     _ws.send_str(json.dumps(context))
         elif msg.tp == MsgType.error:
-            log.debug('ws connection closed with exception %s' % ws.exception())
+            log.debug('ws connection closed with exception {}'.format(ws.exception()))
 
     request.app['websockets'].remove(ws)
     for _ws in request.app['websockets']:
-        _ws.send_str('%s disconected' % user_id)
+        _ws.send_str(json.dumps({'message': '{} disconected'.format(user_id), 'status': STATUS['INFO']}))
     log.debug('websocket connection closed')
 
     return ws

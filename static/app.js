@@ -12,7 +12,7 @@ $(function() {
 		addMessage = function(text) {$('#log').append(_c('div').text(text));};
 
 	ws.onopen = function() {
-	    addMessage('Connection opened.');
+	    addMessage('ws: Connection opened.');
 
     	if(!!game.data('in-game')) {
 		    $(document).on('click', '.game__field button', function() {
@@ -26,17 +26,18 @@ $(function() {
 		}
 	};
 	ws.onmessage = function(event) {
-	   	addMessage(event.data);
-   		console.log(event.data);
-
 	   	data = $.parseJSON(event.data);
 
-	   	if(!!data.status) {
-	   		$('#move_' + data.i + '_' + data.j).text(game.data('user')).attr('disabled', 'disabled');
+	   	addMessage(window.STATUS[data.status]+': '+data.message);
+
+	   	if(data.status == window.STATUS.OK) {
+	   		$('#move_' + data.i + '_' + data.j)
+	   			.text(data.current_user_id)
+	   			.attr('disabled', 'disabled');
 	   	}
 	};
 	ws.onclose = function() {
-		addMessage('Connection closed.');
+		addMessage('ws: Connection closed.');
 	};
 	
 	if(!game.data('in-game')) {	

@@ -17,3 +17,8 @@ class User(BaseModel):
         return await self.insert(users.insert().values(
             login=data['login'], email=data['email'],
             password=data['password']))
+
+    async def one(self, id=None):
+        async with self.db.acquire() as conn:
+            result = await conn.execute(users.select().where(users.c.id == id))
+            return await result.first()
