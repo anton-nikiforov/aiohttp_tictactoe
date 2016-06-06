@@ -1,3 +1,5 @@
+import json
+
 import asyncio
 import aiohttp_jinja2
 import aiohttp_debugtoolbar
@@ -10,6 +12,7 @@ from database import init_db
 from middlewares import db_handler, authorize
 from routes import routes
 from settings import *
+from utils import PeriodicTask
 
 
 async def on_shutdown(app):
@@ -58,10 +61,16 @@ async def init(loop):
     serv_generator = loop.create_server(handler, SITE_HOST, SITE_PORT)
     return serv_generator, handler, app
 
+def ws_interval(app=None):
+    if app['websockets']:
+        for _ws in app['websockets']:
+            _ws.send_str(json.dumps({'message': 'pong', 'status': STATUS['INFO']}))
+
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     serv_generator, handler, app = loop.run_until_complete(init(loop))
     serv = loop.run_until_complete(serv_generator)
+    task = PeriodicTask(lambda: ws_interval(app), 50)
     log.debug('start server %s' % str(serv.sockets[0].getsockname()))
     try:
         loop.run_forever()
