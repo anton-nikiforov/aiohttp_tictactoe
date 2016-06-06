@@ -14,7 +14,9 @@ users = sa.Table('users', metadata,
 games = sa.Table('games', metadata,
                 sa.Column('id', sa.Integer, primary_key=True),
                 sa.Column('created', sa.DateTime),
-                sa.Column('config_size', sa.Integer))
+                sa.Column('finished', sa.DateTime),
+                sa.Column('config_size', sa.Integer),
+                sa.Column('winner_id', sa.Integer))
 
 games_users = sa.Table('games_users', metadata,
                 sa.Column('id', sa.Integer, primary_key=True),

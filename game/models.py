@@ -42,7 +42,7 @@ class Games(BaseModel):
 	async def one(self, game_id=None):
 		async with self.db.acquire() as conn:
 			result = await conn.execute(games.select(games.c.id == game_id))
-			return await result.fetchall()
+			return await result.first()
 
 	async def get_users(self, game_id=None):
 		stm = select([games_users.c.users_id]).where(games_users.c.games_id == game_id)
@@ -67,14 +67,3 @@ class Games(BaseModel):
 							.where(games_users.c.games_id == games_id) \
 							.where(games_users.c.users_id == users_id))
 			return await result.scalar()
-
-class Message():
-
-	def __init__(self, db):
-		self.db = db
-
-	async def save(self, user, msg, **kw):
-		return False
-
-	async def get_messages(self):
-		return False

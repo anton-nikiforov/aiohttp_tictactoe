@@ -3,7 +3,7 @@ from game.views import (
 	games_detail, 
 	games_join, 
 	games_list, 
-	WebSocket
+	game_detail_ws
 	)
 from auth.views import login, signin, signout
 
@@ -12,7 +12,7 @@ routes = [
     ('*', '/game/create', games_create, 'create'),
     ('GET', r'/game/detail/{id:\d+}', games_detail, 'game_detail'),
     ('GET', r'/game/join/{id:\d+}', games_join, 'game_join'),
-    ('GET', '/ws', WebSocket, 'chat'),
+    ('GET', '/game/ws/{id:\d+}', game_detail_ws, 'game_ws'),
     ('*', '/login', login, 'login'),
     ('*', '/signin', signin, 'signin'),
     ('*', '/signout', signout, 'signout'),

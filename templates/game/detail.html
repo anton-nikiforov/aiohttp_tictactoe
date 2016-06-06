@@ -1,11 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
-	<ul>
-		{% for user in game_users %}
-			<li>{{ user.login }}</li>
-		{% endfor %}
-	</ul>
+	<div id="game" 
+		data-id="{{ game_id }}"
+		data-url="{{ url }}" 
+		data-in-game="{{ current_user_in_game }}">
+		<ul>
+			{% for user in game_users %}
+				<li>{{ user.login }}</li>
+			{% endfor %}
+		</ul>
+		<div class="game__field">
+			{% for i in game_size %}
+				<div>
+					{% for j in game_size %}
+						<button id="move_{{ i }}_{{ j }}" data-i="{{ i }}" data-j="{{ j }}"></button>
+					{% endfor %}
+				</div>
+			{% endfor %}
+		</div>
+	</div>
 	<div id="log"></div>
 {% endblock %}
 

@@ -1,10 +1,12 @@
+import json
+
 import aiohttp_jinja2
 from aiohttp_session import get_session
 from aiohttp import web, MsgType
 
 from auth.models import User
 from game.forms import GameCreateForm
-from game.models import Games, Message
+from game.models import Games
 from settings import log, PLAYERS_IN_GAME
 from utils import redirect
 
@@ -71,6 +73,9 @@ async def games_list(request):
 @aiohttp_jinja2.template('game/detail.html')
 async def games_detail(request):
     ''' Play or watch game '''
+    session = await get_session(request)
+    user_id = int(session['user'])
+
     game_id = request.match_info['id']
 
     games = Games(request.db)
@@ -78,40 +83,92 @@ async def games_detail(request):
     game_users = await games.get_users(game_id)
     game_moves = await games.get_moves(game_id)
 
+    current_user_in_game = any(user.id == user_id for user in game_users)
+
     return {
         'game_id': game_id,
         'game_info': game_info,
-        'game_users': game_users,
         'game_moves': game_moves,
-        'title': 'Game room #{}'.format(game_id)
+        'game_users': game_users,
+        'game_size': range(game_info.config_size),
+        'title': 'Game room #{}'.format(game_id),
+        'url': request.app.router['game_ws'].url(parts={'id': game_id}),
+        'user_id': user_id,
+        'current_user_in_game': int(current_user_in_game)
     }
 
-class WebSocket(web.View):
-    
-    async def get(self):
-        ws = web.WebSocketResponse()
-        await ws.prepare(self.request)
+async def game_detail_ws(request):
+    ''' Game websocket handler '''
+    session = await get_session(request)
+    user_id = int(session.get('user'))
+    game_id = request.match_info['id']
 
-        session = await get_session(self.request)
-        login = session.get('user')
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
 
-        for _ws in self.request.app['websockets']:
-            _ws.send_str('%s joined' % login)
-        self.request.app['websockets'].append(ws)
+    for _ws in request.app['websockets']:
+        _ws.send_str('%s joined' % user_id)
+    request.app['websockets'].append(ws)
 
-        async for msg in ws:
-            if msg.tp == MsgType.text:
-                if msg.data == 'close':
-                    await ws.close()
-                else:
-                    for _ws in self.request.app['websockets']:
-                        _ws.send_str('(%s) %s' % (login, msg.data))
-            elif msg.tp == MsgType.error:
-                log.debug('ws connection closed with exception %s' % ws.exception())
+    async for msg in ws:
+        if msg.tp == MsgType.text:
+            if msg.data == 'close':
+                await ws.close()
+            else:
+                data = json.loads(msg.data)
 
-        self.request.app['websockets'].remove(ws)
-        for _ws in self.request.app['websockets']:
-            _ws.send_str('%s disconected' % login)
-        log.debug('websocket connection closed')
+                try:
+                    # Check need attributes
+                    if 'i' not in data or 'j' not in data:
+                        raise Exception('Positions of move are required.')
 
-        return ws
+                    games = Games(request.db)
+                    game_users = await games.get_users(game_id)    
+                    
+                    # Check if user in game
+                    if not any(user.id == user_id for user in game_users):
+                        raise Exception('You cannot play this game. Create your own to play.')
+
+                    game_info = await games.one(game_id) 
+
+                    # Check if game was not ended
+                    if game_info.winner_id:
+                        raise Exception('Game is over.')
+
+                    game_moves = await games.get_moves(game_id)
+
+                    check_pairs_moves = (game_info.config_size**2 - len(game_moves) / 2 == 0)
+                    check_pairs_user = ((next(index for index, user in enumerate(game_users) if user.id == user_id) + 1) / 2 == 0)
+
+                    # Check if current user must move
+                    if check_pairs_user != check_pairs_moves:
+                        raise Exception('It is not your turn.')
+
+                    data_moves = [[0]*game_info.config_size for i in range(game_info.config_size)]
+
+                    for moves in game_moves:
+                        data_moves[moves.x][moves.y] = moves.users_id                        
+
+                    # Check if the field is available
+                    if data_moves[data['i']][data['j']] != 0:
+                        raise Exception('This field is not available.')
+
+                    data_moves[data['i']][data['j']] = user_id
+                    
+                    print('yey!')
+                    print(data_moves)
+
+                except Exception as e:
+                    print(str(e))
+
+                for _ws in request.app['websockets']:
+                    _ws.send_str('(%s) %s' % (user_id, '{}{}'.format(data['i'], data['j'])))
+        elif msg.tp == MsgType.error:
+            log.debug('ws connection closed with exception %s' % ws.exception())
+
+    request.app['websockets'].remove(ws)
+    for _ws in request.app['websockets']:
+        _ws.send_str('%s disconected' % user_id)
+    log.debug('websocket connection closed')
+
+    return ws
