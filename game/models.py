@@ -13,12 +13,12 @@ from database import (
 class Games(BaseModel):
 
 	async def create(self, data=None):
-		return await self.insert(games.insert().values(
+		return await self.sql_transaction(games.insert().values(
 			created=datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 
 			config_size=data['size']))
 
 	async def add_user(self, users_id=None, games_id=None):
-		return await self.insert(games_users.insert().values(
+		return await self.sql_transaction(games_users.insert().values(
 								users_id=users_id, games_id=games_id))
 
 	async def all(self):
@@ -67,3 +67,13 @@ class Games(BaseModel):
 							.where(games_users.c.games_id == games_id) \
 							.where(games_users.c.users_id == users_id))
 			return await result.scalar()
+
+	async def save_move(self, users_id=None, games_id=None, x=None, y=None):
+		return await self.sql_transaction(games_moves.insert().values(
+						users_id=users_id, games_id=games_id, x=x, y=y))
+
+	async def finish_game(self, games_id=None, users_id=None):
+		finished = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+		return await self.sql_transaction(games.update() \
+						.where(games.c.id == games_id) \
+						.values(winner_id=users_id, finished=finished))

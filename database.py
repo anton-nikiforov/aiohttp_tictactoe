@@ -47,7 +47,7 @@ class BaseModel():
     def __init__(self, db):
         self.db = db
 
-    async def insert(self, sql):
+    async def sql_transaction(self, sql):
         async with self.db.acquire() as conn:
             tr = await conn.begin()
             try:

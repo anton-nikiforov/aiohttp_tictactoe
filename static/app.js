@@ -7,14 +7,14 @@ $(function() {
 		throw 'Improperly configured: url is required.';
 	}
 
-	if(!!game.data('in-game')) {
-		var ws = new WebSocket(location.origin.replace(/^http/, 'ws') + ws_url),
-			_c = function(a){return $(document.createElement(a))},
-			addMessage = function(text) {$('#log').append(_c('div').text(text));};
+	var ws = new WebSocket(location.origin.replace(/^http/, 'ws') + ws_url),
+		_c = function(a){return $(document.createElement(a))},
+		addMessage = function(text) {$('#log').append(_c('div').text(text));};
 
-		ws.onopen = function() {
-		    addMessage('Connection opened.');
+	ws.onopen = function() {
+	    addMessage('Connection opened.');
 
+    	if(!!game.data('in-game')) {
 		    $(document).on('click', '.game__field button', function() {
 		    	var _this = $(this);
 		    	context = {
@@ -23,16 +23,23 @@ $(function() {
 		    	};
 		    	ws.send(JSON.stringify(context));
 		    });
-		};
-		ws.onmessage = function(event) {
-		   addMessage(event);
-		   console.log(event);
-		};
-		ws.onclose = function() {
-			addMessage('Connection closed.');
-		};
-	}
-	else {
+		}
+	};
+	ws.onmessage = function(event) {
+	   	addMessage(event.data);
+   		console.log(event.data);
+
+	   	data = $.parseJSON(event.data);
+
+	   	if(!!data.status) {
+	   		$('#move_' + data.i + '_' + data.j).text(game.data('user')).attr('disabled', 'disabled');
+	   	}
+	};
+	ws.onclose = function() {
+		addMessage('Connection closed.');
+	};
+	
+	if(!game.data('in-game')) {	
 		$('.game__field button').attr('disabled', 'disabled');
 	}
 });

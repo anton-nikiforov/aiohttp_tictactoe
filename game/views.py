@@ -8,7 +8,7 @@ from auth.models import User
 from game.forms import GameCreateForm
 from game.models import Games
 from settings import log, PLAYERS_IN_GAME
-from utils import redirect
+from utils import redirect, check_for_winner
 
 @aiohttp_jinja2.template('game/create.html')
 async def games_create(request):
@@ -83,12 +83,19 @@ async def games_detail(request):
     game_users = await games.get_users(game_id)
     game_moves = await games.get_moves(game_id)
 
+    data_moves = [[0]*game_info.config_size for i in range(game_info.config_size)]
+
+    for moves in game_moves:
+        data_moves[moves.x][moves.y] = str(moves.users_id)  
+
     current_user_in_game = any(user.id == user_id for user in game_users)
+
+    print(data_moves)
 
     return {
         'game_id': game_id,
         'game_info': game_info,
-        'game_moves': game_moves,
+        'data_moves': data_moves,
         'game_users': game_users,
         'game_size': range(game_info.config_size),
         'title': 'Game room #{}'.format(game_id),
@@ -102,6 +109,9 @@ async def game_detail_ws(request):
     session = await get_session(request)
     user_id = int(session.get('user'))
     game_id = request.match_info['id']
+
+    print('User id: {}'.format(user_id))
+    print('Game id: {}'.format(game_id))
 
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -127,7 +137,7 @@ async def game_detail_ws(request):
                     
                     # Check if user in game
                     if not any(user.id == user_id for user in game_users):
-                        raise Exception('You cannot play this game. Create your own to play.')
+                        raise Exception('You cannot play this game. Create your own to game.')
 
                     game_info = await games.one(game_id) 
 
@@ -137,8 +147,8 @@ async def game_detail_ws(request):
 
                     game_moves = await games.get_moves(game_id)
 
-                    check_pairs_moves = (game_info.config_size**2 - len(game_moves) / 2 == 0)
-                    check_pairs_user = ((next(index for index, user in enumerate(game_users) if user.id == user_id) + 1) / 2 == 0)
+                    check_pairs_moves = ((game_info.config_size**2 - len(game_moves)) % 2 == 0)
+                    check_pairs_user = ((next(index for index, user in enumerate(game_users) if user.id == user_id) + 1) % 2 == 0)
 
                     # Check if current user must move
                     if check_pairs_user != check_pairs_moves:
@@ -147,22 +157,41 @@ async def game_detail_ws(request):
                     data_moves = [[0]*game_info.config_size for i in range(game_info.config_size)]
 
                     for moves in game_moves:
-                        data_moves[moves.x][moves.y] = moves.users_id                        
+                        data_moves[moves.x][moves.y] = str(moves.users_id)                        
 
                     # Check if the field is available
-                    if data_moves[data['i']][data['j']] != 0:
+                    if data_moves[data['i']][data['j']]:
                         raise Exception('This field is not available.')
 
-                    data_moves[data['i']][data['j']] = user_id
+                    data_moves[data['i']][data['j']] = str(user_id)
                     
-                    print('yey!')
-                    print(data_moves)
+                    # Save move
+                    await games.save_move(user_id, game_id, data['i'], data['j'])
+
+                    # Check game for winner
+                    winner_id = await check_for_winner(data_moves)
+
+                    # if we find winner -> game is end.
+                    if winner_id:
+                        await games.finish_game(game_id, winner_id)
+
+                    context = {
+                        'status': True,
+                        'winner': winner_id,
+                        'next_user_id': next(user.id for user in game_users if user.id != user_id),
+                        'i': data['i'],
+                        'j': data['j']
+                    }
 
                 except Exception as e:
                     print(str(e))
+                    context = {
+                        'status': False,
+                        'message': str(e)
+                    }
 
                 for _ws in request.app['websockets']:
-                    _ws.send_str('(%s) %s' % (user_id, '{}{}'.format(data['i'], data['j'])))
+                    _ws.send_str(json.dumps(context))
         elif msg.tp == MsgType.error:
             log.debug('ws connection closed with exception %s' % ws.exception())
 

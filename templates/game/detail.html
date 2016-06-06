@@ -4,6 +4,7 @@
 	<div id="game" 
 		data-id="{{ game_id }}"
 		data-url="{{ url }}" 
+		data-user="{{ user_id }}"
 		data-in-game="{{ current_user_in_game }}">
 		<ul>
 			{% for user in game_users %}
@@ -14,7 +15,9 @@
 			{% for i in game_size %}
 				<div>
 					{% for j in game_size %}
-						<button id="move_{{ i }}_{{ j }}" data-i="{{ i }}" data-j="{{ j }}"></button>
+						<button id="move_{{ i }}_{{ j }}" data-i="{{ i }}" data-j="{{ j }}" type="button"
+							{% if data_moves[i][j] %}disabled="disabled">{{ data_moves[i][j] }}{% else %}>&nbsp;{% endif %}
+						</button>
 					{% endfor %}
 				</div>
 			{% endfor %}
