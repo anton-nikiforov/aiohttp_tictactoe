@@ -41,7 +41,7 @@ class Games(BaseModel):
 
 	async def one(self, game_id=None):
 		async with self.db.acquire() as conn:
-			result = await conn.execute(games.select(games.c.id == game_id))
+			result = await conn.execute(games.select().where(games.c.id == game_id))
 			return await result.first()
 
 	async def get_users(self, game_id=None):

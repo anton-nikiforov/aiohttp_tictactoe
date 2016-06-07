@@ -5,8 +5,9 @@
 		data-id="{{ game_id }}"
 		data-url="{{ url }}" 
 		data-user="{{ user_id }}"
+		data-winner="{{ game_info.winner_id|int }}"
 		data-in-game="{{ current_user_in_game }}">
-		<h4>Players</h4>
+		<h3>Players</h3>
 		<ul class="game__players">
 			{% for user in game_users %}
 				<li id="player_{{ user.id }}">{{ user.login }}</li>
@@ -27,7 +28,8 @@
 			{% endfor %}
 		</div>
 	</div>
-	<div id="log"></div>
+	<div><a class="btn btn-default" href="{{ app.router['main'].url() }}">Back to list</a></div>
+	<div id="log" class="log"></div>
 {% endblock %}
 
 {% block footer %}

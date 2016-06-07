@@ -8,6 +8,8 @@
 				<th>Id</th>
 				<th>Config size</th>
 				<th>Created</th>
+				<th>Finished</th>
+				<th>Result</th>
 				<th>Users</th>
 				<th></th>
 			</tr>
@@ -18,6 +20,13 @@
 					<td>#{{ one.id }}</td>
 					<td>{{ one.config_size }}</td>
 					<td>{{ one.created }}</td>
+					{% if one.finished %}
+						<td>{{ one.finished }}</td>
+						<td>{{ one.winner_id }}</td>
+					{% else %}
+						<td></td>
+						<td></td>
+					{% endif %}
 					<td>{{ one.users_login }}</td>
 					<td><a href="{{ one.url }}">{{ one.url_label }}</a></td>
 				</tr>

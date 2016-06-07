@@ -59,7 +59,7 @@ async def games_list(request):
 
     for one in result:
         data_one = dict(one)
-        if one.users_count < PLAYERS_IN_GAME and \
+        if not one.finished and one.users_count < PLAYERS_IN_GAME and \
                 user_id not in list(map(int, one.users_ids.split(','))):
             data_one['url'] = request.app.router['game_join'].url(parts={'id': one.id})
             data_one['url_label'] = 'Join'
@@ -83,7 +83,9 @@ async def games_detail(request):
     game_users = await games.get_users(game_id)
     game_moves = await games.get_moves(game_id)
 
-    data_moves = [[0]*game_info.config_size for i in range(game_info.config_size)]
+    size = game_info.config_size
+
+    data_moves = [[0]*size for i in range(size)]
 
     for moves in game_moves:
         data_moves[moves.x][moves.y] = str(moves.users_id)  
@@ -95,7 +97,7 @@ async def games_detail(request):
         'game_info': game_info,
         'data_moves': data_moves,
         'game_users': game_users,
-        'game_size': range(game_info.config_size),
+        'game_size': range(size),
         'title': 'Game room #{}'.format(game_id),
         'url': request.app.router['game_ws'].url(parts={'id': game_id}),
         'user_id': user_id,
@@ -117,9 +119,6 @@ async def game_detail_ws(request):
     for _ws in opened_ws:
         _ws.send_str(json.dumps({'message': '{} joined'.format(user_id), 'status': STATUS['INFO']}))
     opened_ws.append(ws)
-
-    print('after start')
-    print(request.app['websockets'])
 
     async for msg in ws:
         if msg.tp == MsgType.text:
@@ -171,14 +170,14 @@ async def game_detail_ws(request):
 
                     # Check game for winner
                     winner_id = await check_for_winner(data_moves)
-
+                    
                     # if we find winner -> game is end.
                     if winner_id:
                         await games.finish_game(game_id, winner_id)
 
                     context = {
                         'status': STATUS['OK'],
-                        'winner': winner_id,
+                        'winner_id': winner_id,
                         'next_user_id': next(user.id for user in game_users if user.id != user_id),
                         'current_user_id': user_id,
                         'i': data['i'],
@@ -202,8 +201,5 @@ async def game_detail_ws(request):
     for _ws in opened_ws:
         _ws.send_str(json.dumps({'message': '{} disconected'.format(user_id), 'status': STATUS['INFO']}))
     log.debug('websocket connection closed')
-    
-    print('after remove ws')
-    print(request.app['websockets'])
 
     return ws

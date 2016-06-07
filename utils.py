@@ -20,7 +20,7 @@ async def check_for_winner(data=None):
 		if data[0][j]:
 			row = []
 			for i in ranges:
-				row.append(data[j][i])
+				row.append(data[i][j])
 			if row[1:] == row[:-1]:
 				return row[0]
 
