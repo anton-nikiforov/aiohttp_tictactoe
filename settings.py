@@ -31,3 +31,5 @@ STATUS = {
 	'ERROR': 2,
 	'INFO': 3
 }
+
+PONG_WS_INTERVAL = 60

@@ -28,12 +28,19 @@ $(function() {
 	ws.onmessage = function(event) {
 	   	data = $.parseJSON(event.data);
 
-	   	addMessage(window.STATUS[data.status]+': '+data.message);
+	   	addMessage(data.status+': '+data.message);
+		console.log(data);
 
-	   	if(data.status == window.STATUS.OK) {
+	   	if(data.status == window.STATUS['OK']) {
 	   		$('#move_' + data.i + '_' + data.j)
 	   			.text(data.current_user_id)
 	   			.attr('disabled', 'disabled');
+
+	   		if(!!data.winner_id) {
+	   			$('.game__field button').attr('disabled', 'disabled');
+
+	   			$('#player_' + data.winner_id).addClass('winner').append(_c('span').text(' is winner!'));
+	   		}
 	   	}
 	};
 	ws.onclose = function() {

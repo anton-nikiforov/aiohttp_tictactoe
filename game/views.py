@@ -90,10 +90,6 @@ async def games_detail(request):
 
     current_user_in_game = any(user.id == user_id for user in game_users)
 
-    STATUS_JS = {}
-    for key, value in STATUS.items():
-        STATUS_JS[value] = key
-
     return {
         'game_id': game_id,
         'game_info': game_info,
@@ -104,7 +100,7 @@ async def games_detail(request):
         'url': request.app.router['game_ws'].url(parts={'id': game_id}),
         'user_id': user_id,
         'current_user_in_game': int(current_user_in_game),
-        'response_status': json.dumps(STATUS_JS)
+        'response_status': json.dumps(STATUS)
     }
 
 async def game_detail_ws(request):
@@ -113,12 +109,17 @@ async def game_detail_ws(request):
     user_id = int(session.get('user'))
     game_id = request.match_info['id']
 
-    ws = web.WebSocketResponse()
+    ws = web.WebSocketResponse(autoclose=False)
     await ws.prepare(request)
 
-    for _ws in request.app['websockets']:
+    opened_ws = request.app['websockets'][game_id]
+
+    for _ws in opened_ws:
         _ws.send_str(json.dumps({'message': '{} joined'.format(user_id), 'status': STATUS['INFO']}))
-    request.app['websockets'].append(ws)
+    opened_ws.append(ws)
+
+    print('after start')
+    print(request.app['websockets'])
 
     async for msg in ws:
         if msg.tp == MsgType.text:
@@ -192,14 +193,17 @@ async def game_detail_ws(request):
                         'message': str(e)
                     }
 
-                for _ws in request.app['websockets']:
+                for _ws in opened_ws:
                     _ws.send_str(json.dumps(context))
         elif msg.tp == MsgType.error:
             log.debug('ws connection closed with exception {}'.format(ws.exception()))
 
-    request.app['websockets'].remove(ws)
-    for _ws in request.app['websockets']:
+    opened_ws.remove(ws)
+    for _ws in opened_ws:
         _ws.send_str(json.dumps({'message': '{} disconected'.format(user_id), 'status': STATUS['INFO']}))
     log.debug('websocket connection closed')
+    
+    print('after remove ws')
+    print(request.app['websockets'])
 
     return ws

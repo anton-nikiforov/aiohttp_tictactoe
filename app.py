@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 import asyncio
 import aiohttp_jinja2
@@ -16,8 +17,9 @@ from utils import PeriodicTask
 
 
 async def on_shutdown(app):
-    for ws in app['websockets']:
-        await ws.close(code=1001, message='Server shutdown')
+    for key, game in app['websockets'].items():
+        for ws in game:
+            await ws.close(code=1001, message='Server shutdown')
 
 async def shutdown(server, app, handler):
     server.close()
@@ -36,7 +38,7 @@ async def init(loop):
         db_handler,
         aiohttp_debugtoolbar.middleware,
     ])
-    app['websockets'] = []
+    app['websockets'] = defaultdict(list)
     handler = app.make_handler()
     if DEBUG:
         aiohttp_debugtoolbar.setup(app, intercept_redirects=False)
@@ -62,15 +64,18 @@ async def init(loop):
     return serv_generator, handler, app
 
 def ws_interval(app=None):
-    if app['websockets']:
-        for _ws in app['websockets']:
-            _ws.send_str(json.dumps({'message': 'pong', 'status': STATUS['INFO']}))
+    ''' Send to all users empty message to avoid nginx timeout '''
+    for key, game in app['websockets'].items():
+        for ws in game:
+            ws.send_str(json.dumps({'message': 'pong', 
+                                    'status': STATUS['INFO']}))
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     serv_generator, handler, app = loop.run_until_complete(init(loop))
     serv = loop.run_until_complete(serv_generator)
-    task = PeriodicTask(lambda: ws_interval(app), 50)
+    # Create periodic task
+    task = PeriodicTask(lambda: ws_interval(app), PONG_WS_INTERVAL)
     log.debug('start server %s' % str(serv.sockets[0].getsockname()))
     try:
         loop.run_forever()

@@ -14,7 +14,7 @@ class User(BaseModel):
             return await conn.execute(users.select().where(users.c.email == email).where(users.c.password == password))        
 
     async def create(self, data=None):
-        return await self.insert(users.insert().values(
+        return await self.sql_transaction(users.insert().values(
             login=data['login'], email=data['email'],
             password=data['password']))
 

@@ -7,18 +7,21 @@
 		data-user="{{ user_id }}"
 		data-in-game="{{ current_user_in_game }}">
 		<h4>Players</h4>
-		<ul>
+		<ul class="game__players">
 			{% for user in game_users %}
-				<li>{{ user.login }}</li>
+				<li id="player_{{ user.id }}">{{ user.login }}</li>
 			{% endfor %}
 		</ul>
 		<div class="game__field">
 			{% for i in game_size %}
 				<div>
 					{% for j in game_size %}
-						<button id="move_{{ i }}_{{ j }}" name="move[{{ i }}][{{ j }}]" data-i="{{ i }}" data-j="{{ j }}" type="button"
-							{% if data_moves[i][j] %}disabled="disabled">{{ data_moves[i][j] }}{% else %}>&nbsp;{% endif %}
-						</button>
+<button 
+	id="move_{{ i }}_{{ j }}" 
+	data-i="{{ i }}" 
+	data-j="{{ j }}" 
+	autocomplete="off"
+	type="button"{% if data_moves[i][j] %} disabled>{{ data_moves[i][j] }}{% else %}>-{% endif %}</button>
 					{% endfor %}
 				</div>
 			{% endfor %}

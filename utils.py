@@ -1,3 +1,5 @@
+import asyncio
+
 from aiohttp import web
 
 def redirect(request, router_name):
