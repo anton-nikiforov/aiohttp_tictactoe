@@ -33,3 +33,4 @@ STATUS = {
 }
 
 PONG_WS_INTERVAL = 60
+DRAW = -1

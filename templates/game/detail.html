@@ -6,8 +6,9 @@
 		data-url="{{ url }}" 
 		data-user="{{ user_id }}"
 		data-winner="{{ game_info.winner_id|int }}"
-		data-in-game="{{ current_user_in_game }}">
-		<h3>Players</h3>
+		data-in-game="{{ current_user_in_game }}"
+		data-next-user="{{ next_user_id }}">
+		<h3 class="game__players__title">Players</h3>
 		<ul class="game__players">
 			{% for user in game_users %}
 				<li id="player_{{ user.id }}">{{ user.login }}</li>

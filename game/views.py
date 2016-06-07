@@ -7,7 +7,7 @@ from aiohttp import web, MsgType
 from auth.models import User
 from game.forms import GameCreateForm
 from game.models import Games
-from settings import log, PLAYERS_IN_GAME, STATUS
+from settings import log, PLAYERS_IN_GAME, STATUS, DRAW
 from utils import redirect, check_for_winner
 
 @aiohttp_jinja2.template('game/create.html')
@@ -65,7 +65,9 @@ async def games_list(request):
             data_one['url_label'] = 'Join'
         else:
             data_one['url'] = request.app.router['game_detail'].url(parts={'id': one.id})
-            data_one['url_label'] = 'View'           
+            data_one['url_label'] = 'View'  
+        if one.finished and one.winner_id == DRAW:
+            data_one['winner_login'] = 'Draw'
         data.append(data_one)
 
     return {'title': 'List of games', 'data': data}
@@ -91,6 +93,7 @@ async def games_detail(request):
         data_moves[moves.x][moves.y] = str(moves.users_id)  
 
     current_user_in_game = any(user.id == user_id for user in game_users)
+    next_user_id = game_users[int((size**2 - len(game_moves)) % 2 == 0)].id
 
     return {
         'game_id': game_id,
@@ -102,6 +105,7 @@ async def games_detail(request):
         'url': request.app.router['game_ws'].url(parts={'id': game_id}),
         'user_id': user_id,
         'current_user_in_game': int(current_user_in_game),
+        'next_user_id': next_user_id,
         'response_status': json.dumps(STATUS)
     }
 
@@ -170,7 +174,11 @@ async def game_detail_ws(request):
 
                     # Check game for winner
                     winner_id = await check_for_winner(data_moves)
-                    
+
+                    # Draw
+                    if game_info.config_size**2 == (len(game_moves) + 1) and not winner_id:
+                        winner_id = DRAW
+
                     # if we find winner -> game is end.
                     if winner_id:
                         await games.finish_game(game_id, winner_id)

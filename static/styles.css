@@ -12,3 +12,8 @@
 .log {
 	margin-top: 20px;
 }
+.game__draw {
+	display: inline-block;
+	padding-left: 10px;
+	color: #ff0000;
+}

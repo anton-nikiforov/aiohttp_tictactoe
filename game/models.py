@@ -26,16 +26,17 @@ class Games(BaseModel):
 			result = await conn.execute('''
 				select g.*, (select count(gu.id) from games_users gu 
 							where gu.games_id = g.id) as users_count,
-					(select group_concat(u.login separator ', ') from users u
+					(select group_concat(u.login order by gu.id separator ', ') 
+						from users u
 						left join games_users gu on u.id = gu.users_id 
-						left join games gg on gg.id = gu.games_id 
-						where gg.id = g.id
+						where gu.games_id = g.id
 					) as users_login,
 					(select group_concat(u.id separator ',') from users u
 						left join games_users gu on u.id = gu.users_id 
-						left join games gg on gg.id = gu.games_id 
-						where gg.id = g.id
-					) as users_ids
+						where gu.games_id = g.id
+					) as users_ids,
+					(select u.login from users u where u.id = g.winner_id) 
+						as winner_login
 				from games g order by g.created desc;''')
 			return await result.fetchall()
 
@@ -45,9 +46,10 @@ class Games(BaseModel):
 			return await result.first()
 
 	async def get_users(self, game_id=None):
-		stm = select([games_users.c.users_id]).where(games_users.c.games_id == game_id)
 		async with self.db.acquire() as conn:
-			result = await conn.execute(users.select().where(users.c.id.in_(stm)))
+			result = await conn.execute('''select u.* from users u 
+				left join games_users gu on gu.users_id = u.id 
+				where games_id={} order by gu.id;'''.format(game_id))
 			return await result.fetchall()
 
 	async def get_moves(self, game_id=None):

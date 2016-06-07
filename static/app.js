@@ -5,8 +5,18 @@ $(function() {
 		_c = function(a){return $(document.createElement(a))},
 		addMessage = function(text) {$('#log').append(_c('div').text(text));},
 		setWinner = function(winner_id) {
+			$('.game__your_move').remove();
    			$('.game__field button').attr('disabled', 'disabled');
-   			$('#player_' + winner_id).addClass('winner').append(_c('span').text(' is winner!'));			
+   			
+   			if(winner_id == -1) {
+   				$('.game__players__title').append(_c('span').addClass('game__draw').text('Draw'))
+   			} else {
+   				$('#player_' + winner_id).addClass('winner').append(_c('span').text(' is winner!'));
+   			}
+		},
+		setNextMove = function(user_id) {
+	   		$('.game__your_move').remove();
+	   		$('#player_' + user_id).append(_c('span').addClass('game__your_move').text(' your move!'));
 		};
 
 	if(!ws_url) {
@@ -14,6 +24,10 @@ $(function() {
 	}
 
 	if(!game.data('winner')) {
+
+		if(!!game.data('next-user') && !game.data('winner')) {
+			setNextMove(game.data('next-user'));
+		}
 
 		var ws = new WebSocket(location.origin.replace(/^http/, 'ws') + ws_url);
 
@@ -41,6 +55,10 @@ $(function() {
 		   		$('#move_' + data.i + '_' + data.j)
 		   			.text(data.current_user_id)
 		   			.attr('disabled', 'disabled');
+
+		   		if(!!data.next_user_id) {
+		   			setNextMove(data.next_user_id);
+		   		}
 
 		   		if(!!data.winner_id) {
 		   			ws.send('close');
