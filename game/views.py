@@ -93,7 +93,12 @@ async def games_detail(request):
         data_moves[moves.x][moves.y] = str(moves.users_id)  
 
     current_user_in_game = any(user.id == user_id for user in game_users)
-    next_user_id = game_users[int((size**2 - len(game_moves)) % 2 == 0)].id
+    next_user_id = 0
+
+    if len(game_users) == PLAYERS_IN_GAME:
+        next_user_id = game_users[int((size**2 - len(game_moves)) % 2 == 0)].id
+    elif not len(game_moves):
+        next_user_id = game_users[0].id
 
     return {
         'game_id': game_id,
@@ -131,8 +136,10 @@ async def game_detail_ws(request):
         })
 
     for _ws in opened_ws:
-        _ws.send_str(json.dumps({'message': '{} joined'.format(user_id), 'status': STATUS['INFO']}))
-        _ws.send_str(json.dumps({'status': STATUS['UPDATE_USERS'], 'users': data_users}))
+        _ws.send_str(json.dumps({'message': '{} joined'.format(user_id), 
+                                'status': STATUS['INFO']}))
+        _ws.send_str(json.dumps({'message': 'update user list', 
+                    'status': STATUS['UPDATE_USERS'], 'users': data_users}))
     opened_ws.append(ws)
 
     async for msg in ws:
@@ -187,14 +194,19 @@ async def game_detail_ws(request):
                     if game_info.config_size**2 == (len(game_moves) + 1) and not winner_id:
                         winner_id = DRAW
 
-                    # if we find winner -> game is end.
+                    # if we find winner or draw -> game is end.
                     if winner_id:
                         await games.finish_game(game_id, winner_id)
+
+                    # if user alone in game and make move
+                    next_user_id = -1
+                    if len(game_users) == PLAYERS_IN_GAME:
+                        next_user_id = next(user.id for user in game_users if user.id != user_id)
 
                     context = {
                         'status': STATUS['OK'],
                         'winner_id': winner_id,
-                        'next_user_id': next(user.id for user in game_users if user.id != user_id),
+                        'next_user_id': next_user_id,
                         'current_user_id': user_id,
                         'i': data['i'],
                         'j': data['j'],
