@@ -4,6 +4,7 @@
 	<div id="game" 
 		data-id="{{ game_id }}"
 		data-url="{{ url }}" 
+		data-replay-url="{{ replay_url }}"
 		data-user="{{ user_id }}"
 		data-winner="{{ game_info.winner_id|int }}"
 		data-in-game="{{ current_user_in_game }}"
@@ -29,7 +30,10 @@
 			{% endfor %}
 		</div>
 	</div>
-	<div><a class="btn btn-default" href="{{ app.router['main'].url() }}">Back to list</a></div>
+	<div>
+		<a class="btn btn-default" href="{{ app.router['main'].url() }}">Back to list</a>
+		<button id="game_reply" autocomplete="off" class="btn btn-default" disabled>Show replay of game</button>
+	</div>
 	<div id="log" class="log"></div>
 {% endblock %}
 

@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import aiohttp_jinja2
@@ -108,6 +109,7 @@ async def games_detail(request):
         'game_size': range(size),
         'title': 'Game room #{}'.format(game_id),
         'url': request.app.router['game_ws'].url(parts={'id': game_id}),
+        'replay_url': request.app.router['game_replay'].url(parts={'id': game_id}),
         'user_id': user_id,
         'current_user_in_game': int(current_user_in_game),
         'next_user_id': next_user_id,
@@ -230,4 +232,39 @@ async def game_detail_ws(request):
         _ws.send_str(json.dumps({'message': '{} disconected'.format(user_id), 'status': STATUS['INFO']}))
     log.debug('websocket connection closed')
 
+    return ws
+
+async def game_replay_ws(request):
+    ''' Replay of ended game '''
+    game_id = request.match_info['id']
+
+    ws = web.WebSocketResponse(autoclose=False)
+    await ws.prepare(request)
+
+    games = Games(request.db)
+    game_info = await games.one(game_id)
+
+    try:
+        if not game_info.finished or not game_info.winner_id:
+            raise Exception('Game is not finished.')
+
+        game_moves = await games.get_moves(game_id)
+
+        for move in game_moves:
+            ws.send_str(json.dumps({
+                'status': STATUS['OK'],
+                'x': move.x,
+                'y': move.y,
+                'value': move.users_id,
+                'message': '#{} made move on {},{}'.format(move.users_id, 
+                                                            move.x, move.y)
+            }))
+            await asyncio.sleep(1)
+    except:
+        print(str(e))
+        ws.send_str(json.dumps({
+            'status': STATUS['ERROR'],
+            'message': str(e)
+        }))
+    await ws.close()
     return ws

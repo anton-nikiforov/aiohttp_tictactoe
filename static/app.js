@@ -13,6 +13,28 @@ $(function() {
    			} else {
    				$('#player_' + winner_id).addClass('winner').append(_c('span').text(' is winner!'));
    			}
+
+   			$('#game_reply').removeAttr('disabled').on('click', function() {
+   				var _this = $(this), ws = new WebSocket(location.origin.replace(/^http/, 'ws') + game.data('replay-url'));
+   				
+   				ws.onopen = function() {
+   					_this.attr('disabled', 'disabled');
+   					$('.game__field button').text('-');
+   				};
+
+   				ws.onmessage = function(event) {
+   					data = $.parseJSON(event.data);
+   					addMessage(data.status+': '+data.message);
+
+   					if(data.status == window.STATUS['OK']) {
+   						$('#move_'+ data.x + '_' + data.y).text(data.value);
+   					}
+   				};
+
+     			ws.onclose = function() {
+   					_this.removeAttr('disabled');
+   				}; 				
+   			});
 		},
 		setNextMove = function(user_id) {
 	   		$('.game__your_move').remove();
@@ -47,9 +69,7 @@ $(function() {
 		};
 		ws.onmessage = function(event) {
 		   	data = $.parseJSON(event.data);
-
 		   	addMessage(data.status+': '+data.message);
-			console.log(data);
 
 		   	if(data.status == window.STATUS['OK']) {
 		   		$('#move_' + data.i + '_' + data.j)
