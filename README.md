@@ -25,8 +25,8 @@ PORT=8000
 
 ##Screenshots
 
-![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_1.png)
-![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_2.png)
-![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_3.png)
-![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_4.png)
+![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_1.jpg)
+![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_2.jpg)
+![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_3.jpg)
+![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_4.jpg)
 
