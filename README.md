@@ -25,8 +25,15 @@ PORT=8000
 
 ##Screenshots
 
+###List of games
 ![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_1.jpg)
+
+###Game room
 ![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_2.jpg)
+
+###Game room with a winner
 ![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_3.jpg)
+
+###Create game room
 ![alt tag](https://raw.githubusercontent.com/Kefir92/aiohttp_tictactoe/master/screens/tictactoe_4.jpg)
 
