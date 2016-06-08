@@ -65,6 +65,16 @@ $(function() {
 		   			setWinner(data.winner_id);
 		   		}
 		   	}
+
+		   	if(data.status == window.STATUS['UPDATE_USERS']) {
+		   		for(i in data.users) {
+		   			if(!$('#player_' + data.users[i].id).length) {
+		   				$('.game__players').append(_c('li')
+	   						.attr('id', 'player_' + data.users[i].id)
+	   						.text(data.users[i].login));
+		   			}
+		   		}
+		   	}
 		};
 		ws.onclose = function() {
 			addMessage('ws: Connection closed.');

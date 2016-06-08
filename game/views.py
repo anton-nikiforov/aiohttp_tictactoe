@@ -120,8 +120,19 @@ async def game_detail_ws(request):
 
     opened_ws = request.app['websockets'][game_id]
 
+    games = Games(request.db)
+    game_users = await games.get_users(game_id) 
+
+    data_users = []
+    for user in game_users:
+        data_users.append({
+            'id': user.id,
+            'login': user.login
+        })
+
     for _ws in opened_ws:
         _ws.send_str(json.dumps({'message': '{} joined'.format(user_id), 'status': STATUS['INFO']}))
+        _ws.send_str(json.dumps({'status': STATUS['UPDATE_USERS'], 'users': data_users}))
     opened_ws.append(ws)
 
     async for msg in ws:
@@ -134,10 +145,7 @@ async def game_detail_ws(request):
                 try:
                     # Check need attributes
                     if 'i' not in data or 'j' not in data:
-                        raise Exception('Positions of move are required.')
-
-                    games = Games(request.db)
-                    game_users = await games.get_users(game_id)    
+                        raise Exception('Positions of move are required.')  
                     
                     # Check if user in game
                     if not any(user.id == user_id for user in game_users):

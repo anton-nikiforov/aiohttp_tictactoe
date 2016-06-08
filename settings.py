@@ -29,7 +29,8 @@ PLAYERS_IN_GAME = 2
 STATUS = {
 	'OK': 1,
 	'ERROR': 2,
-	'INFO': 3
+	'INFO': 3,
+	'UPDATE_USERS': 4
 }
 
 PONG_WS_INTERVAL = 60
